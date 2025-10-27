@@ -2,7 +2,7 @@ class DnsResolver {
   final String name;
   final Uri url;
   final bool supportsGet; // DoH method
-  final bool isTrusted;   // For your internal classification
+  final bool isTrusted; // For your internal classification
 
   const DnsResolver({
     required this.name,
