@@ -1,0 +1,20 @@
+include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+  errors:
+    missing_return: error
+    dead_code: warning
+    unused_import: warning
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    prefer_final_locals: true
+    prefer_const_constructors: true
+    require_trailing_commas: true
+    always_declare_return_types: true

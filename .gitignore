@@ -1,0 +1,39 @@
+# Dart & Flutter .gitignore for package development
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Packages & Builds
+.dart_tool/
+.packages
+.pub-cache/
+build/
+coverage/
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Flutter specific
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/Flutter/Generated.xcconfig
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Others
+pubspec.lock
+coverage/
+test/.test_coverage.dart
