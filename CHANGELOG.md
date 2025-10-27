@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1
+
+### 🛠 Fixes
+- Exported `DnsOverHttpsBinaryClient` in `super_dns_client.dart`
+  so it is now publicly accessible from the package import.
+
+### 🔧 Internal
+- Minor cleanup before pub.dev publish
+
+
 ## 0.2.0
 
 ### ✨ New Features
