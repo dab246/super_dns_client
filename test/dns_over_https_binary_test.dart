@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:universal_io/io.dart';
 
 import 'package:super_dns_client/super_dns_client.dart';
 import 'package:test/test.dart';

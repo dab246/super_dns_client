@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 
 import 'package:super_dns_client/src/models/srv_record.dart';
 import 'package:super_dns_client/src/udp_tcp/base_udp_srv_client.dart';
