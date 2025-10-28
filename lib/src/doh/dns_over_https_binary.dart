@@ -2,29 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:super_dns_client/src/models/srv_record.dart';
 import 'package:super_dns_client/super_dns_client.dart';
-
-import 'dns_resolver.dart';
-
-class DnsSrvRecord {
-  final int priority;
-  final int weight;
-  final int port;
-  final String target;
-  final int ttl;
-
-  DnsSrvRecord({
-    required this.priority,
-    required this.weight,
-    required this.port,
-    required this.target,
-    required this.ttl,
-  });
-
-  @override
-  String toString() =>
-      'SRV(priority=$priority, weight=$weight, port=$port, target=$target, ttl=$ttl)';
-}
 
 class DnsOverHttpsBinaryClient extends DnsClient {
   final HttpClient _httpClient = HttpClient();
@@ -55,17 +34,25 @@ class DnsOverHttpsBinaryClient extends DnsClient {
 
   final List<DnsResolver> resolvers;
 
-  DnsOverHttpsBinaryClient({List<DnsResolver>? customResolvers})
-      : resolvers = [...defaultResolvers, ...?customResolvers];
+  DnsOverHttpsBinaryClient({
+    List<DnsResolver>? customResolvers,
+    super.debugMode,
+  }) : resolvers = [...defaultResolvers, ...?customResolvers];
 
   @override
   Future<List<InternetAddress>> lookup(
     String hostname, {
+    Duration timeout = const Duration(seconds: 3),
     String resolverName = 'quad9',
   }) async {
-    final queryBytes = _buildDnsQuery(hostname, RRType.a);
     final resolver = _getResolver(resolverName);
-    final responseBytes = await _sendDoH(resolver.url, queryBytes);
+    final queryBytes = _buildDnsQuery(hostname, RRType.a);
+    final useGet = _resolverRequiresGet(resolver.url);
+    final responseBytes = await _sendDoH(
+      resolver.url,
+      queryBytes,
+      useGet: useGet,
+    );
     return _parseARecords(responseBytes)
         .map((ip) => InternetAddress(ip))
         .toList();
@@ -75,11 +62,17 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   Future<List<String>> lookupDataByRRType(
     String hostname,
     RRType rrType, {
+    Duration timeout = const Duration(seconds: 3),
     String resolverName = 'quad9',
   }) async {
-    final queryBytes = _buildDnsQuery(hostname, rrType);
     final resolver = _getResolver(resolverName);
-    final responseBytes = await _sendDoH(resolver.url, queryBytes);
+    final queryBytes = _buildDnsQuery(hostname, rrType);
+    final useGet = _resolverRequiresGet(resolver.url);
+    final responseBytes = await _sendDoH(
+      resolver.url,
+      queryBytes,
+      useGet: useGet,
+    );
 
     if (rrType == RRType.srv) {
       return _parseSrvRecords(responseBytes).map((r) => r.toString()).toList();
@@ -90,16 +83,43 @@ class DnsOverHttpsBinaryClient extends DnsClient {
     throw UnimplementedError('RRType ${rrType.name} not yet supported');
   }
 
-  Future<List<DnsSrvRecord>> lookupSrv({
-    required String domain,
-    String resolverName = 'quad9',
+  @override
+  Future<List<SrvRecord>> lookupSrv(
+    String srvName, {
+    Duration timeout = const Duration(seconds: 3),
   }) async {
-    final resolver = _getResolver(resolverName);
-    final queryBytes = _buildDnsQuery(domain, RRType.srv);
-    final useGet = _resolverRequiresGet(resolver.url);
-    final responseBytes =
-        await _sendDoH(resolver.url, queryBytes, useGet: useGet);
-    return _parseSrvRecords(responseBytes);
+    final queryBytes = _buildDnsQuery(srvName, RRType.srv);
+
+    for (final resolver in resolvers) {
+      try {
+        final useGet = _resolverRequiresGet(resolver.url);
+        final responseBytes = await _sendDoH(
+          resolver.url,
+          queryBytes,
+          useGet: useGet,
+        ).timeout(timeout);
+
+        final records = _parseSrvRecords(responseBytes);
+        if (records.isNotEmpty) {
+          debug(
+            '[DnsOverHttpsBinaryClient]✅ SRV record found using ${resolver.name}: ${records.first.target}:${records.first.port}',
+          );
+          return records;
+        } else {
+          debug(
+            '[DnsOverHttpsBinaryClient]⚠️ No SRV record found from ${resolver.name}',
+          );
+        }
+      } catch (e) {
+        debug(
+          '[DnsOverHttpsBinaryClient]❌ Failed SRV lookup via ${resolver.name}: $e',
+        );
+      }
+    }
+
+    throw Exception(
+      '[DnsOverHttpsBinaryClient] No SRV records found from any resolver',
+    );
   }
 
   DnsResolver _getResolver(String name) {
@@ -194,7 +214,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
     return bytes.toBytes();
   }
 
-  List<DnsSrvRecord> _parseSrvRecords(Uint8List dataBytes) {
+  List<SrvRecord> _parseSrvRecords(Uint8List dataBytes) {
     final data = ByteData.sublistView(dataBytes);
     int offset = 12;
 
@@ -203,7 +223,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
     }
     offset += 1 + 4;
 
-    final results = <DnsSrvRecord>[];
+    final results = <SrvRecord>[];
 
     while (offset < data.lengthInBytes) {
       if (dataBytes[offset] & 0xC0 == 0xC0) {
@@ -232,12 +252,13 @@ class DnsOverHttpsBinaryClient extends DnsClient {
 
         final labels = _readDomain(dataBytes, offset + 6);
         results.add(
-          DnsSrvRecord(
+          SrvRecord(
             priority: priority,
             weight: weight,
             port: port,
             target: labels.join('.'),
             ttl: ttl,
+            name: 'SRV',
           ),
         );
       }

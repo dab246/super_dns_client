@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.3.0
+
+### ✨ New Features
+- Added `BaseUdpSrvClient` abstract class for shared SRV lookup logic.
+- Implemented:
+  - `SystemUdpSrvClient`: queries SRV records via system-configured DNS (UDP → TCP fallback).
+  - `PublicUdpSrvClient`: queries SRV records via public resolvers (Quad9, AdGuard, Yandex, OpenDNS, etc.).
+  - `DnsOverHttps.lookupSrvMulti()`: sequential SRV lookup (Google → Cloudflare fallback).
+  - `DnsOverHttps.lookupSrvParallel()`: parallel SRV lookup (runs both resolvers simultaneously).
+- Added `SrvRecord` model for typed SRV response handling instead of generic Map.
+- Improved example `dns_client_example.dart` to demonstrate all client types:
+  - System resolver
+  - Public resolver
+  - DoH (Google, Cloudflare, Mullvad)
+- Added complete test coverage for:
+  - UDP/TCP SRV clients
+  - DoH SRV (multi + parallel)
+  - System and public resolver detection
+  - Error fallback (UDP timeout → TCP)
+- Refactored project structure:
+
+lib/src/doh/
+lib/src/udp_tcp/
+lib/src/models/
+example/dns_client_example.dart
+
+### ⚙️ Improvements
+- Enhanced fallback logic between Google and Cloudflare DoH resolvers.
+- Added English-only documentation comments for consistency.
+- Improved debug logging for all SRV clients.
+
+### 🧩 Fixes
+- Better error handling for IPv6 and system DNS detection.
+- Tests now handle dynamic DNS environments safely (no hardcoded IPs).
+- Fixed internal method visibility and export paths.
+
+### 🧪 Tests
+- Added new unit tests for:
+  - `DnsOverHttps.lookupSrvMulti()`
+  - `DnsOverHttps.lookupSrvParallel()`
+- Ensured 100% test coverage across DoH, UDP, and TCP clients.
+
+### 🔧 Misc
+- Updated GitHub workflows (`analyze.yml`, `test.yml`).
+- Cleaned up comments and improved readability throughout the codebase.
+
 ## 0.2.1
 
 ### 🛠 Fixes
