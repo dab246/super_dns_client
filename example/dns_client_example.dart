@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:super_dns_client/src/udp_tcp/public_udp_srv_client.dart';
-import 'package:super_dns_client/src/udp_tcp/system_udp_srv_client.dart';
 import 'package:super_dns_client/super_dns_client.dart';
 
 Future<void> main() async {
@@ -54,7 +52,9 @@ Future<void> main() async {
     ),
   ];
   final binaryCustom = DnsOverHttpsBinaryClient(
-      customResolvers: customResolvers, debugMode: true);
+    customResolvers: customResolvers,
+    debugMode: true,
+  );
 
   try {
     final customSrvRecords =

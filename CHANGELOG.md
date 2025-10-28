@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.1
+
+### 🔧 Public Exports
+- Exported all new SRV-related classes and clients in `super_dns_client.dart`:
+  - `BaseUdpSrvClient`
+  - `SystemUdpSrvClient`
+  - `PublicUdpSrvClient`
+  - `SrvRecord`
+  - `DnsResolver`
+  - `DnsClient`
+
+### 🧩 Improvements
+- Ensured all new resolvers and models are available for external import.
+- Minor cleanup and final formatting before release.
+
 ## 0.3.0
 
 ### ✨ New Features

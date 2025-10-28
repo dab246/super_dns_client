@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:super_dns_client/src/models/srv_record.dart';
 import 'package:super_dns_client/super_dns_client.dart';
 
 class DnsOverHttpsBinaryClient extends DnsClient {
