@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:super_dns_client/src/dns_over_https_binary.dart';
-import 'package:super_dns_client/src/dns_resolver.dart';
+import 'package:super_dns_client/src/models/srv_record.dart';
 import 'package:super_dns_client/super_dns_client.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('DnsOverHttpsBinaryClient Quad9', () {
-    test('lookup( google.com )', () async {
+  group('DnsOverHttpsBinaryClient (default resolvers)', () {
+    test('lookup( google.com ) should return valid IPv4/IPv6 addresses',
+        () async {
       final client = DnsOverHttpsBinaryClient();
       final addresses = await client.lookup('google.com');
 
@@ -26,12 +26,12 @@ void main() {
 
       expect(results, isNotNull);
       expect(results.isNotEmpty, isTrue);
-      expect(results.first, contains('SRV('));
+      expect(results.first, contains('SrvRecord('));
     });
 
-    test('lookupSrv should return parsed SRV objects', () async {
+    test('lookupSrv should return parsed SRV records', () async {
       final client = DnsOverHttpsBinaryClient();
-      final records = await client.lookupSrv(domain: '_jmap._tcp.linagora.com');
+      final records = await client.lookupSrv('_jmap._tcp.linagora.com');
 
       expect(records, isNotEmpty);
       expect(records.first.port, greaterThan(0));
@@ -41,8 +41,8 @@ void main() {
     });
   });
 
-  group('DnsOverHttpsBinaryClient custom resolver', () {
-    test('custom resolver should override default', () async {
+  group('DnsOverHttpsBinaryClient (custom resolver)', () {
+    test('custom resolver should override default resolver list', () async {
       final custom = [
         DnsResolver(
           name: 'mullvad',
@@ -51,23 +51,36 @@ void main() {
       ];
       final client = DnsOverHttpsBinaryClient(customResolvers: custom);
 
-      expect(
-        client.resolvers.firstWhere((r) => r.name == 'mullvad'),
-        isNotNull,
-      );
-      expect(
-        client.resolvers.firstWhere((r) => r.name == 'mullvad').url.toString(),
-        equals('https://doh.mullvad.net/dns-query'),
-      );
+      final found = client.resolvers.firstWhere((r) => r.name == 'mullvad');
+      expect(found, isNotNull);
+      expect(found.url.toString(), equals('https://doh.mullvad.net/dns-query'));
+    });
+
+    test('lookupSrv using only custom resolver should work or fail gracefully',
+        () async {
+      final custom = [
+        DnsResolver(
+          name: 'mullvad',
+          url: Uri.parse('https://doh.mullvad.net/dns-query'),
+        ),
+      ];
+      final client = DnsOverHttpsBinaryClient(customResolvers: custom);
+
+      try {
+        final records = await client.lookupSrv('_jmap._tcp.linagora.com');
+        expect(records, isA<List<SrvRecord>>());
+      } catch (e) {
+        expect(e, isA<Exception>());
+      }
     });
   });
 
-  group('DnsOverHttpsBinaryClient invalid resolver', () {
-    test('should throw error for unknown resolver', () async {
+  group('DnsOverHttpsBinaryClient (error handling)', () {
+    test('should throw exception when no SRV record is found', () async {
       final client = DnsOverHttpsBinaryClient();
       expect(
-        () => client.lookupSrv(domain: 'example.com', resolverName: 'invalid'),
-        throwsA(isA<ArgumentError>()),
+        () async => await client.lookupSrv('nonexistent.domain.example'),
+        throwsA(isA<Exception>()),
       );
     });
   });

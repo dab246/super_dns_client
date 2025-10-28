@@ -1,87 +1,119 @@
 import 'dart:io';
 
-import 'package:super_dns_client/src/dns_over_https_binary.dart';
-import 'package:super_dns_client/src/dns_resolver.dart';
+import 'package:super_dns_client/src/udp_tcp/public_udp_srv_client.dart';
+import 'package:super_dns_client/src/udp_tcp/system_udp_srv_client.dart';
 import 'package:super_dns_client/super_dns_client.dart';
 
-void main() async {
-  // 🔹 Example 1: Traditional JSON-based DoH (Google)
+Future<void> main() async {
+  print('🔹 Example 1: JSON-based DoH (Google)');
   final dohGoogle = DnsOverHttps.google();
-  final response = await dohGoogle.lookup('google.com');
-  for (var address in response) {
-    print('DnsOverHttps.google::lookup → ${address.address}');
+  final aResponse = await dohGoogle.lookup('google.com');
+  for (var address in aResponse) {
+    print('DnsOverHttps.google::A → ${address.address}');
   }
 
-  final responseSRV = await dohGoogle.lookupDataByRRType(
+  final srvGoogle = await dohGoogle.lookupDataByRRType(
     '_jmap._tcp.linagora.com',
     RRType.srv,
   );
-  for (var srv in responseSRV) {
+  for (var srv in srvGoogle) {
     print('DnsOverHttps.google::SRV → $srv');
   }
 
-  // 🔹 Example 2: Traditional JSON-based DoH (Cloudflare)
+  print('\n🔹 Example 2: JSON-based DoH (Cloudflare)');
   final dohCloudflare = DnsOverHttps.cloudflare();
-  final responseSRVCloudflare = await dohCloudflare.lookupDataByRRType(
+  final srvCloudflare = await dohCloudflare.lookupDataByRRType(
     '_jmap._tcp.linagora.com',
     RRType.srv,
   );
-  for (var srv in responseSRVCloudflare) {
+  for (var srv in srvCloudflare) {
     print('DnsOverHttps.cloudflare::SRV → $srv');
   }
 
-  // 🔹 Example 3: New Binary DoH client (non-GAFAM resolvers)
-  final binaryClient = DnsOverHttpsBinaryClient();
+  print('\n🔹 Example 3: Binary DoH client (Quad9, AdGuard, Yandex, etc.)');
+  final binaryClient = DnsOverHttpsBinaryClient(debugMode: true);
 
-  // A record lookup (Quad9)
   final aRecords = await binaryClient.lookup('google.com');
   for (var ip in aRecords) {
-    print('DnsOverHttpsBinary(quad9)::A → ${ip.address}');
+    print('DnsOverHttpsBinary::A → ${ip.address}');
   }
 
-  // SRV record lookup (Quad9)
-  final srvRecords =
-      await binaryClient.lookupSrv(domain: '_jmap._tcp.linagora.com');
+  final srvRecords = await binaryClient.lookupSrv('_jmap._tcp.linagora.com');
   for (var record in srvRecords) {
     print(
-      'DnsOverHttpsBinary(quad9)::SRV → priority=${record.priority}, weight=${record.weight}, port=${record.port}, target=${record.target}',
+      'DnsOverHttpsBinary::SRV → priority=${record.priority}, '
+      'weight=${record.weight}, port=${record.port}, target=${record.target}',
     );
   }
 
-  // 🔹 Example 4: Using custom resolver (e.g. Mullvad - GET only)
+  print('\n🔹 Example 4: Custom DoH Resolver (Mullvad only)');
   final customResolvers = [
     DnsResolver(
       name: 'mullvad',
       url: Uri.parse('https://doh.mullvad.net/dns-query'),
     ),
   ];
-  final binaryCustom =
-      DnsOverHttpsBinaryClient(customResolvers: customResolvers);
+  final binaryCustom = DnsOverHttpsBinaryClient(
+      customResolvers: customResolvers, debugMode: true);
 
   try {
-    final customSrvRecords = await binaryCustom.lookupSrv(
-      domain: '_jmap._tcp.linagora.com',
-      resolverName: 'mullvad',
-    );
-
+    final customSrvRecords =
+        await binaryCustom.lookupSrv('_jmap._tcp.linagora.com');
     for (var record in customSrvRecords) {
       print(
-        'DnsOverHttpsBinary(mullvad)::SRV → priority=${record.priority}, weight=${record.weight}, port=${record.port}, target=${record.target}',
+        'DnsOverHttpsBinary(mullvad)::SRV → '
+        'priority=${record.priority}, weight=${record.weight}, '
+        'port=${record.port}, target=${record.target}',
       );
     }
   } catch (e) {
     print('❌ Mullvad lookup failed: $e');
   }
 
-  // 🔹 Example 5: Handling errors gracefully
+  print('\n🔹 Example 5: Error handling');
   try {
-    await binaryClient.lookupSrv(
-      domain: 'example.com',
-      resolverName: 'unknown',
-    );
-  } on ArgumentError catch (e) {
-    print('❌ Error: ${e.message}');
+    // Tên resolver không còn cần thiết — gọi sai sẽ tự động duyệt tất cả.
+    await binaryClient.lookupSrv('example.com');
   } on SocketException catch (e) {
     print('❌ Network error: $e');
+  } on Exception catch (e) {
+    print('❌ Lookup error: $e');
   }
+
+  // 🔹 Example 6: System-configured DNS SRV Lookup
+  print('\n🔹 Example 6: System-configured DNS SRV Lookup');
+  final systemResolver = SystemUdpSrvClient();
+  final systemRecords =
+      await systemResolver.lookupSrv('_jmap._tcp.linagora.com');
+
+  if (systemRecords.isEmpty) {
+    print('SystemUdpSrvClient: No SRV records found.');
+  } else {
+    print('SystemUdpSrvClient: Resolved SRV records (RFC 2782 order):');
+    for (final r in systemRecords) {
+      print(
+        ' → ${r.target}:${r.port} '
+        '(priority=${r.priority}, weight=${r.weight}, ttl=${r.ttl})',
+      );
+    }
+  }
+
+  // 🔹 Example 7: Public (Open) DNS SRV Lookup
+  print('\n🔹 Example 7: Public (Open) DNS SRV Lookup');
+  final publicResolver = PublicUdpSrvClient();
+  final publicResults =
+      await publicResolver.lookupSrv('_jmap._tcp.linagora.com');
+
+  if (publicResults.isEmpty) {
+    print('PublicUdpSrvClient: No SRV records found.');
+  } else {
+    print('PublicUdpSrvClient: Resolved SRV records (RFC 2782 order):');
+    for (final r in publicResults) {
+      print(
+        ' → ${r.target}:${r.port} (prio=${r.priority}, weight=${r.weight})',
+      );
+    }
+  }
+
+  print('\n✅ All examples completed successfully.\n');
 }
