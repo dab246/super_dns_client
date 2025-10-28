@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+### Changed
+- Updated dependency to `super_dns >=0.1.1` to support Flutter Web builds.
+- Synchronized internal client implementation with stubbed DnsServer logic for web environments.
+
 ## 0.3.2
 
 ### Fixed
