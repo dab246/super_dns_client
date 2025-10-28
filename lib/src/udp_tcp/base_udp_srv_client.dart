@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 
 import 'package:super_dns/super_dns.dart' as super_dns;
 import 'package:super_dns_client/src/models/srv_record.dart';

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2
+
+### Fixed
+- Replaced all `dart:io` imports with `universal_io` to support Flutter Web builds.
+- Fixed type mismatch error between `dart:io` and `universal_io` `InternetAddress` classes.
+- Ensured `DnsClient` and related classes compile correctly on both mobile and web platforms.
+
 ## 0.3.1
 
 ### 🔧 Public Exports
