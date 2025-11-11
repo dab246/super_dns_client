@@ -18,7 +18,7 @@ _$DnsRecordImpl _$$DnsRecordImplFromJson(Map<String, dynamic> json) =>
       answer: (json['Answer'] as List<dynamic>?)
           ?.map((e) => Answer.fromJson(e as Map<String, dynamic>))
           .toList(),
-      comment: json['Comment'] as String?,
+      comment: json['Comment'],
     );
 
 Map<String, dynamic> _$$DnsRecordImplToJson(_$DnsRecordImpl instance) =>

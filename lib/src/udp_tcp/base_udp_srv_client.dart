@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:universal_io/io.dart';
 
 import 'package:super_dns/super_dns.dart' as super_dns;
 import 'package:super_dns_client/src/models/srv_record.dart';
 import 'package:super_raw/raw.dart';
+import 'package:universal_io/io.dart';
 
 import '../../super_dns_client.dart' show DnsClient, RRType;
 
@@ -22,47 +22,41 @@ abstract class BaseUdpSrvClient extends DnsClient {
   Future<List<SrvRecord>> lookupSrv(
     String srvName, {
     String? resolverName,
-    Duration timeout = const Duration(seconds: 3),
   }) async {
     final dnsServers = await getDnsServers();
     if (dnsServers.isEmpty) {
-      debug('[BaseSrvResolver] ⚠️ No DNS servers configured.');
-      return [];
+      debug('[BaseUdpSrvClient] ⚠️ No DNS servers configured.');
+      throw Exception('No DNS servers configured.');
     }
 
     debug(
-      '[BaseSrvResolver] 🌐 Querying $srvName via ${dnsServers.length} servers...',
-    );
-    final results = await Future.any(
-      dnsServers.map((dns) async {
-        try {
-          final udp = await _lookupSrvOverUdp(srvName, dns, timeout);
-          if (udp.isNotEmpty) {
-            debug('[BaseSrvResolver] ✅ ${dns.address} responded via UDP');
-            return udp;
-          }
-        } catch (e) {
-          debug('[BaseSrvResolver] ⚠️ UDP failed at ${dns.address}: $e');
-        }
-
-        try {
-          final tcp = await _lookupSrvOverTcp(srvName, dns, timeout);
-          if (tcp.isNotEmpty) {
-            debug('[BaseSrvResolver] ✅ ${dns.address} responded via TCP');
-            return tcp;
-          }
-        } catch (e) {
-          debug('[BaseSrvResolver] ❌ TCP failed at ${dns.address}: $e');
-        }
-
-        return <SrvRecord>[];
-      }),
+      '[BaseUdpSrvClient] 🌐 Querying $srvName via ${dnsServers.length} servers...',
     );
 
-    if (results.isEmpty) {
-      debug('[BaseSrvResolver] ❌ No SRV records found for $srvName');
+    for (final dns in dnsServers) {
+      try {
+        final udp = await _lookupSrvOverUdp(srvName, dns);
+        if (udp.isNotEmpty) {
+          debug('[BaseUdpSrvClient] ✅ ${dns.address} responded via UDP');
+          return udp;
+        }
+      } catch (e) {
+        debug('[BaseUdpSrvClient] ⚠️ UDP failed at ${dns.address}: $e');
+      }
+
+      try {
+        final tcp = await _lookupSrvOverTcp(srvName, dns);
+        if (tcp.isNotEmpty) {
+          debug('[BaseUdpSrvClient] ✅ ${dns.address} responded via TCP');
+          return tcp;
+        }
+      } catch (e) {
+        debug('[BaseUdpSrvClient] ❌ TCP failed at ${dns.address}: $e');
+      }
     }
-    return results;
+
+    debug('[BaseUdpSrvClient] ❌ No SRV records found for $srvName');
+    throw Exception('No SRV records found for $srvName');
   }
 
   // ---------------------------------------------------------------------------
@@ -72,7 +66,6 @@ abstract class BaseUdpSrvClient extends DnsClient {
   Future<List<SrvRecord>> _lookupSrvOverUdp(
     String srvName,
     InternetAddress dnsServer,
-    Duration timeout,
   ) async {
     final packet = super_dns.DnsPacket()
       ..id = DateTime.now().millisecondsSinceEpoch & 0xFFFF
@@ -93,12 +86,6 @@ abstract class BaseUdpSrvClient extends DnsClient {
     socket.send(packet.toImmutableBytes(), dnsServer, 53);
 
     final completer = Completer<List<SrvRecord>>();
-    final timer = Timer(timeout, () {
-      if (!completer.isCompleted) {
-        completer.completeError(TimeoutException('UDP timeout'));
-        socket.close();
-      }
-    });
 
     socket.listen((event) {
       if (event == RawSocketEvent.read) {
@@ -117,7 +104,6 @@ abstract class BaseUdpSrvClient extends DnsClient {
           completer.completeError(e);
         } finally {
           socket.close();
-          timer.cancel();
         }
       }
     });
@@ -128,7 +114,6 @@ abstract class BaseUdpSrvClient extends DnsClient {
   Future<List<SrvRecord>> _lookupSrvOverTcp(
     String srvName,
     InternetAddress dnsServer,
-    Duration timeout,
   ) async {
     final packet = super_dns.DnsPacket()
       ..id = DateTime.now().millisecondsSinceEpoch & 0xFFFF
@@ -141,7 +126,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
       ];
 
     final bytes = packet.toImmutableBytes();
-    final socket = await Socket.connect(dnsServer, 53).timeout(timeout);
+    final socket = await Socket.connect(dnsServer, 53);
     final writer = RawWriter.withCapacity(bytes.length + 2)
       ..writeUint16(bytes.length)
       ..writeBytes(bytes);
@@ -172,7 +157,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
       },
     );
 
-    return completer.future.timeout(timeout);
+    return completer.future;
   }
 
   // ---------------------------------------------------------------------------
@@ -226,19 +211,12 @@ abstract class BaseUdpSrvClient extends DnsClient {
   }
 
   @override
-  Future<List<InternetAddress>> lookup(
-    String hostname, {
-    Duration timeout = const Duration(seconds: 3),
-  }) {
+  Future<List<InternetAddress>> lookup(String hostname) {
     throw UnimplementedError();
   }
 
   @override
-  Future<List<String>> lookupDataByRRType(
-    String hostname,
-    RRType rrType, {
-    Duration timeout = const Duration(seconds: 3),
-  }) {
+  Future<List<String>> lookupDataByRRType(String hostname, RRType rrType) {
     throw UnimplementedError();
   }
 }

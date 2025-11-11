@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:universal_io/io.dart';
 
 import 'package:super_dns_client/super_dns_client.dart';
+import 'package:universal_io/io.dart';
 
 /// DNS-over-HTTPS (DoH) client supporting multiple resolvers (Google, Cloudflare).
 ///
@@ -28,6 +28,7 @@ class DnsOverHttps extends DnsClient {
   void close({bool force = false}) => _client.close(force: force);
 
   /// Factory: Google DoH endpoint.
+  /// [Google DNS-over-HTTPS documentation](https://developers.google.com/speed/public-dns/docs/dns-over-https)
   factory DnsOverHttps.google({Duration? timeout, bool debugMode = false}) =>
       DnsOverHttps(
         'https://dns.google/resolve',
@@ -36,6 +37,7 @@ class DnsOverHttps extends DnsClient {
       );
 
   /// Factory: Cloudflare DoH endpoint.
+  /// [Cloudflare DNS-over-HTTPS documentation](https://developers.cloudflare.com/1.1.1.1/dns-over-https/json-format/)
   factory DnsOverHttps.cloudflare({
     Duration? timeout,
     bool debugMode = false,
@@ -46,11 +48,18 @@ class DnsOverHttps extends DnsClient {
         debugMode: debugMode,
       );
 
+  factory DnsOverHttps.empty({
+    Duration? timeout,
+    bool debugMode = false,
+  }) =>
+      DnsOverHttps(
+        '',
+        timeout: timeout,
+        debugMode: debugMode,
+      );
+
   @override
-  Future<List<InternetAddress>> lookup(
-    String hostname, {
-    Duration timeout = const Duration(seconds: 3),
-  }) async {
+  Future<List<InternetAddress>> lookup(String hostname) async {
     final record = await lookupHttps(hostname);
     final results = record.answer
             ?.where((a) => a.type == RRType.a.value)
@@ -116,9 +125,8 @@ class DnsOverHttps extends DnsClient {
   @override
   Future<List<String>> lookupDataByRRType(
     String hostname,
-    RRType rrType, {
-    Duration timeout = const Duration(seconds: 3),
-  }) async {
+    RRType rrType,
+  ) async {
     final record = await lookupHttpsByRRType(hostname, rrType);
     return record.answer
             ?.where((a) => a.type == rrType.value)
@@ -129,10 +137,7 @@ class DnsOverHttps extends DnsClient {
 
   /// Standard SRV lookup (single resolver only).
   @override
-  Future<List<SrvRecord>> lookupSrv(
-    String srvName, {
-    Duration timeout = const Duration(seconds: 3),
-  }) async {
+  Future<List<SrvRecord>> lookupSrv(String srvName) async {
     final record = await lookupHttpsByRRType(srvName, RRType.srv);
     return record.answer
             ?.where((a) => a.type == RRType.srv.value)
@@ -153,20 +158,15 @@ class DnsOverHttps extends DnsClient {
   /// Multi-resolver SRV lookup (tries Google → Cloudflare sequentially).
   ///
   /// If Google fails or returns empty results, Cloudflare is used as fallback.
-  Future<List<SrvRecord>> lookupSrvMulti(
-    String srvName, {
-    Duration timeout = const Duration(seconds: 3),
-  }) async {
+  Future<List<SrvRecord>> lookupSrvMulti(String srvName) async {
     final resolvers = [
-      DnsOverHttps.google(timeout: timeout),
-      DnsOverHttps.cloudflare(timeout: timeout),
+      DnsOverHttps.google(),
+      DnsOverHttps.cloudflare(),
     ];
 
     for (final resolver in resolvers) {
       try {
-        final record = await resolver
-            .lookupHttpsByRRType(srvName, RRType.srv)
-            .timeout(timeout);
+        final record = await resolver.lookupHttpsByRRType(srvName, RRType.srv);
 
         final answers =
             record.answer?.where((a) => a.type == RRType.srv.value).toList();
@@ -199,20 +199,15 @@ class DnsOverHttps extends DnsClient {
   /// Parallel SRV lookup (runs Google & Cloudflare concurrently).
   ///
   /// Returns the first non-empty result to improve performance.
-  Future<List<SrvRecord>> lookupSrvParallel(
-    String srvName, {
-    Duration timeout = const Duration(seconds: 3),
-  }) async {
+  Future<List<SrvRecord>> lookupSrvParallel(String srvName) async {
     final resolvers = [
-      DnsOverHttps.google(timeout: timeout),
-      DnsOverHttps.cloudflare(timeout: timeout),
+      DnsOverHttps.google(),
+      DnsOverHttps.cloudflare(),
     ];
 
     final futures = resolvers.map((resolver) async {
       try {
-        final record = await resolver
-            .lookupHttpsByRRType(srvName, RRType.srv)
-            .timeout(timeout);
+        final record = await resolver.lookupHttpsByRRType(srvName, RRType.srv);
         final answers =
             record.answer?.where((a) => a.type == RRType.srv.value).toList();
 

@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:universal_io/io.dart';
 import 'dart:typed_data';
 
 import 'package:super_dns_client/super_dns_client.dart';
+import 'package:universal_io/io.dart';
 
 class DnsOverHttpsBinaryClient extends DnsClient {
   final HttpClient _httpClient = HttpClient();
@@ -32,16 +32,20 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   ];
 
   final List<DnsResolver> resolvers;
+  final Duration timeout;
 
   DnsOverHttpsBinaryClient({
     List<DnsResolver>? customResolvers,
+    Duration? timeout,
     super.debugMode,
-  }) : resolvers = [...defaultResolvers, ...?customResolvers];
+  })  : timeout = timeout ?? const Duration(seconds: 5),
+        resolvers = [...defaultResolvers, ...?customResolvers] {
+    _httpClient.connectionTimeout = this.timeout;
+  }
 
   @override
   Future<List<InternetAddress>> lookup(
     String hostname, {
-    Duration timeout = const Duration(seconds: 3),
     String resolverName = 'quad9',
   }) async {
     final resolver = _getResolver(resolverName);
@@ -61,7 +65,6 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   Future<List<String>> lookupDataByRRType(
     String hostname,
     RRType rrType, {
-    Duration timeout = const Duration(seconds: 3),
     String resolverName = 'quad9',
   }) async {
     final resolver = _getResolver(resolverName);
@@ -83,10 +86,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   }
 
   @override
-  Future<List<SrvRecord>> lookupSrv(
-    String srvName, {
-    Duration timeout = const Duration(seconds: 3),
-  }) async {
+  Future<List<SrvRecord>> lookupSrv(String srvName) async {
     final queryBytes = _buildDnsQuery(srvName, RRType.srv);
 
     for (final resolver in resolvers) {
@@ -96,7 +96,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
           resolver.url,
           queryBytes,
           useGet: useGet,
-        ).timeout(timeout);
+        );
 
         final records = _parseSrvRecords(responseBytes);
         if (records.isNotEmpty) {

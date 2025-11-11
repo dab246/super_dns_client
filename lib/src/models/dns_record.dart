@@ -37,7 +37,7 @@ class DnsRecord with _$DnsRecord {
     @JsonKey(name: 'Answer') List<Answer>? answer,
 
     /// Optional comment from resolver
-    @JsonKey(name: 'Comment') String? comment,
+    @JsonKey(name: 'Comment') dynamic comment,
   }) = _DnsRecord;
 
   factory DnsRecord.fromJson(Map<String, dynamic> json) =>
