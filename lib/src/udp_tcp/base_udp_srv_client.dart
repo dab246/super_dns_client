@@ -15,7 +15,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
   BaseUdpSrvClient({super.debugMode});
 
   /// Returns the list of DNS servers to query.
-  Future<List<InternetAddress>> getDnsServers();
+  Future<List<InternetAddress>> getDnsServers({String? host});
 
   /// Perform SRV lookup using UDP first, then fallback to TCP if needed.
   @override
@@ -23,7 +23,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
     String srvName, {
     String? resolverName,
   }) async {
-    final dnsServers = await getDnsServers();
+    final dnsServers = await getDnsServers(host: srvName);
     if (dnsServers.isEmpty) {
       debug('[BaseUdpSrvClient] ⚠️ No DNS servers configured.');
       throw Exception('No DNS servers configured.');

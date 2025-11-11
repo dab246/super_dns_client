@@ -23,5 +23,6 @@ class PublicUdpSrvClient extends BaseUdpSrvClient {
   }) : _publicDns = [..._defaultPublicDns, ...?customPublicDns];
 
   @override
-  Future<List<InternetAddress>> getDnsServers() async => _publicDns;
+  Future<List<InternetAddress>> getDnsServers({String? host}) async =>
+      _publicDns;
 }
