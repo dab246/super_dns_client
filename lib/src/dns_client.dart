@@ -1,6 +1,5 @@
-import 'package:universal_io/io.dart';
-
 import 'package:super_dns_client/super_dns_client.dart';
+import 'package:universal_io/io.dart';
 
 /// Base interface for all DNS clients.
 ///
@@ -40,10 +39,7 @@ abstract class DnsClient {
   /// ```
   ///
   /// Throws an [Exception] if the lookup fails.
-  Future<List<InternetAddress>> lookup(
-    String hostname, {
-    Duration timeout = const Duration(seconds: 3),
-  });
+  Future<List<InternetAddress>> lookup(String hostname);
 
   /// Performs a DNS lookup for a specific record type (e.g. CNAME, TXT, SRV).
   ///
@@ -54,11 +50,7 @@ abstract class DnsClient {
   /// ```dart
   /// final txtRecords = await client.lookupDataByRRType('example.com', RRType.txt);
   /// ```
-  Future<List<String>> lookupDataByRRType(
-    String hostname,
-    RRType rrType, {
-    Duration timeout = const Duration(seconds: 3),
-  });
+  Future<List<String>> lookupDataByRRType(String hostname, RRType rrType);
 
   /// Performs an SRV record lookup (RFC 2782).
   ///
@@ -73,8 +65,5 @@ abstract class DnsClient {
   /// - [srvName]: must include the `_service._proto.domain` format.
   /// - [resolverName]: optional label (e.g. `"quad9"`, `"adguard"`) for custom resolvers.
   /// - [timeout]: max waiting time for the query.
-  Future<List<SrvRecord>> lookupSrv(
-    String srvName, {
-    Duration timeout = const Duration(seconds: 3),
-  });
+  Future<List<SrvRecord>> lookupSrv(String srvName);
 }

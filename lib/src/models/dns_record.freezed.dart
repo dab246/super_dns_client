@@ -53,7 +53,7 @@ mixin _$DnsRecord {
 
   /// Optional comment from resolver
   @JsonKey(name: 'Comment')
-  String? get comment => throw _privateConstructorUsedError;
+  dynamic get comment => throw _privateConstructorUsedError;
 
   /// Serializes this DnsRecord to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -79,7 +79,7 @@ abstract class $DnsRecordCopyWith<$Res> {
       @JsonKey(name: 'CD') bool? cd,
       @JsonKey(name: 'edns_client_subnet') String? ednsClientSubnet,
       @JsonKey(name: 'Answer') List<Answer>? answer,
-      @JsonKey(name: 'Comment') String? comment});
+      @JsonKey(name: 'Comment') dynamic comment});
 }
 
 /// @nodoc
@@ -143,7 +143,7 @@ class _$DnsRecordCopyWithImpl<$Res, $Val extends DnsRecord>
       comment: freezed == comment
           ? _value.comment
           : comment // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
     ) as $Val);
   }
 }
@@ -165,7 +165,7 @@ abstract class _$$DnsRecordImplCopyWith<$Res>
       @JsonKey(name: 'CD') bool? cd,
       @JsonKey(name: 'edns_client_subnet') String? ednsClientSubnet,
       @JsonKey(name: 'Answer') List<Answer>? answer,
-      @JsonKey(name: 'Comment') String? comment});
+      @JsonKey(name: 'Comment') dynamic comment});
 }
 
 /// @nodoc
@@ -227,7 +227,7 @@ class __$$DnsRecordImplCopyWithImpl<$Res>
       comment: freezed == comment
           ? _value.comment
           : comment // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as dynamic,
     ));
   }
 }
@@ -303,7 +303,7 @@ class _$DnsRecordImpl extends _DnsRecord {
   /// Optional comment from resolver
   @override
   @JsonKey(name: 'Comment')
-  final String? comment;
+  final dynamic comment;
 
   @override
   String toString() {
@@ -324,13 +324,22 @@ class _$DnsRecordImpl extends _DnsRecord {
             (identical(other.ednsClientSubnet, ednsClientSubnet) ||
                 other.ednsClientSubnet == ednsClientSubnet) &&
             const DeepCollectionEquality().equals(other._answer, _answer) &&
-            (identical(other.comment, comment) || other.comment == comment));
+            const DeepCollectionEquality().equals(other.comment, comment));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, status, tc, rd, ra, ad, cd,
-      ednsClientSubnet, const DeepCollectionEquality().hash(_answer), comment);
+  int get hashCode => Object.hash(
+      runtimeType,
+      status,
+      tc,
+      rd,
+      ra,
+      ad,
+      cd,
+      ednsClientSubnet,
+      const DeepCollectionEquality().hash(_answer),
+      const DeepCollectionEquality().hash(comment));
 
   /// Create a copy of DnsRecord
   /// with the given fields replaced by the non-null parameter values.
@@ -358,7 +367,7 @@ abstract class _DnsRecord extends DnsRecord {
       @JsonKey(name: 'CD') final bool? cd,
       @JsonKey(name: 'edns_client_subnet') final String? ednsClientSubnet,
       @JsonKey(name: 'Answer') final List<Answer>? answer,
-      @JsonKey(name: 'Comment') final String? comment}) = _$DnsRecordImpl;
+      @JsonKey(name: 'Comment') final dynamic comment}) = _$DnsRecordImpl;
   const _DnsRecord._() : super._();
 
   factory _DnsRecord.fromJson(Map<String, dynamic> json) =
@@ -406,7 +415,7 @@ abstract class _DnsRecord extends DnsRecord {
   /// Optional comment from resolver
   @override
   @JsonKey(name: 'Comment')
-  String? get comment;
+  dynamic get comment;
 
   /// Create a copy of DnsRecord
   /// with the given fields replaced by the non-null parameter values.
