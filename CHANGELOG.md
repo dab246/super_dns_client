@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.5
+### 🛠 Fixed
+- Fixed **System DNS resolution** behavior on **Android** and **iOS**.  
+  Since mobile platforms do not expose system DNS servers (`getprop` or `/etc/resolv.conf` inaccessible in sandbox),  
+  the resolver now **falls back to the platform’s default DNS resolver** automatically.
+- Updated `SystemUdpSrvClient` to:
+  - Remove unsupported system calls on Android/iOS.
+  - Use platform-resolved `InternetAddress.lookup()` instead.
+  - Keep `/etc/resolv.conf` parsing for Linux/macOS environments.
+
+### ⚙️ Internal
+- Improved debug logs to clearly indicate when the client uses automatic platform DNS fallback.
+- Ensured consistent behavior across Android, iOS, Linux, and macOS.
+
 ## 0.3.4
 ### Changed
 
