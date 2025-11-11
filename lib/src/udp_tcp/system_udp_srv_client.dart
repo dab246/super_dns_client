@@ -8,24 +8,8 @@ class SystemUdpSrvClient extends BaseUdpSrvClient {
   SystemUdpSrvClient({super.debugMode});
 
   @override
-  Future<List<InternetAddress>> getDnsServers() async {
+  Future<List<InternetAddress>> getDnsServers({String? host}) async {
     final result = <InternetAddress>[];
-
-    // Android: getprop system properties
-    if (Platform.isAndroid) {
-      try {
-        final process = await Process.run('getprop', []);
-        final lines = (process.stdout as String).split('\n');
-        for (final line in lines) {
-          if (line.contains('dns') && line.contains(':')) {
-            final match = RegExp(r'\[([0-9a-fA-F:.]+)\]').firstMatch(line);
-            if (match != null) {
-              result.add(InternetAddress(match.group(1)!));
-            }
-          }
-        }
-      } catch (_) {}
-    }
 
     // Linux / macOS: parse /etc/resolv.conf
     if (Platform.isLinux || Platform.isMacOS) {
@@ -43,11 +27,17 @@ class SystemUdpSrvClient extends BaseUdpSrvClient {
       } catch (_) {}
     }
 
-    // iOS: no public API
-    if (Platform.isIOS) {
+    // Android/iOS → rely on system resolver (do not attempt to read system props)
+    if (Platform.isAndroid || Platform.isIOS) {
       debug(
-        '[SystemUdpSrvClient] ⚠️ iOS does not expose system DNS (no public API)',
+        '[SystemUdpSrvClient] ⚠️ Using platform DNS resolver (automatic, no explicit servers)',
       );
+      if (host != null) {
+        final addresses = await InternetAddress.lookup(host);
+        debug('[SystemUdpSrvClient] Using system DNS resolver for $host: '
+            '${addresses.map((e) => e.address).join(', ')}');
+        result.addAll(addresses);
+      }
     }
 
     // If still empty, just return []

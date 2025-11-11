@@ -16,7 +16,7 @@ class MockUdpSrvClient extends BaseUdpSrvClient {
   bool shouldFailTcp = false;
 
   @override
-  Future<List<InternetAddress>> getDnsServers() async =>
+  Future<List<InternetAddress>> getDnsServers({String? host}) async =>
       [InternetAddress('127.0.0.1')];
 
   @override
