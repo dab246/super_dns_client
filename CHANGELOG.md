@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.7
+### ✨ New Features
+- **Native system DNS integration** for Android and iOS:
+  - Android now retrieves DNS servers directly from `ConnectivityManager.getLinkProperties()`.
+  - iOS uses BSD resolver API (`res_ninit`) to enumerate system DNS servers.
+  - This provides more accurate results than previous fallback-based detection.
+
+### 🔧 Refactor
+- Updated `SystemUdpSrvClient` to use unified `PlatformSystemDns` bridge (via MethodChannel).
+- Removed old `getprop` and `InternetAddress.lookup()` fallback logic.
+- Restricted debug logs to debug mode (`assert()` only).
+- Retained `/etc/resolv.conf` parsing for macOS and Linux.
+
+### 🧩 Example
+- Added a full **example app** for testing DNS resolution across Android, iOS, and Web.
+- Example includes native verification of system DNS.
+
+### 📝 Documentation
+- Updated `README.md` with detailed explanation of native system DNS detection:
+  - Android → `ConnectivityManager`
+  - iOS → `res_ninit`
+  - Linux/macOS → `/etc/resolv.conf`
+  - Web → not supported (use DoH)
+- Added platform-specific behavior table for clarity.
+
+### 🧪 Tests
+- Stabilized `SystemUdpSrvClient` tests to be cross-platform safe.
+- Ensured CI-friendly fallback for headless environments.
+
 ## 0.3.6
 ### 🛠️ Changed
 
