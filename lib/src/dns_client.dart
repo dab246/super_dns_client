@@ -19,7 +19,10 @@ abstract class DnsClient {
   final bool debugMode;
   final Duration timeout;
 
-  DnsClient({this.debugMode = false, this.timeout = const Duration(seconds: 5)});
+  DnsClient({
+    this.debugMode = false,
+    this.timeout = const Duration(seconds: 5),
+  });
 
   /// Utility method for safe debug printing
   void debug(Object? message) {
@@ -57,7 +60,7 @@ abstract class DnsClient {
   ///
   /// Example:
   /// ```dart
-  /// final srvRecords = await client.lookupSrv('_jmap._tcp.linagora.com');
+  /// final srvRecords = await client.lookupSrv('_jmap._tcp.example.com');
   /// for (final record in srvRecords) {
   ///   print('→ ${record.target}:${record.port} (prio=${record.priority}, weight=${record.weight})');
   /// }
