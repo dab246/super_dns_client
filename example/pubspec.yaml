@@ -1,0 +1,23 @@
+name: super_dns_client_example
+description: Example app for testing the super_dns_client plugin.
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # reference to the parent package
+  super_dns_client:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

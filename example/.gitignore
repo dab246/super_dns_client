@@ -1,0 +1,32 @@
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# iOS
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/App.framework
+ios/.symlinks/
+ios/Pods/
+ios/build/
+ios/Runner.xcworkspace/
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+
+# Web
+web/.dart_tool/
+web/.flutter-plugins-dependencies
