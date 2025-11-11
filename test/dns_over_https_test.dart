@@ -36,28 +36,28 @@ void main() {
   group('HttpDnsClient SRV lookups', () {
     test('lookupSrvMulti() should resolve via Google or Cloudflare', () async {
       final client = DnsOverHttps.google(debugMode: true);
-      final records = await client.lookupSrvMulti('_jmap._tcp.linagora.com');
+      final records = await client.lookupSrvMulti('_jmap._tcp.fastmail.com');
 
       expect(records, isNotNull);
       expect(records.isNotEmpty, isTrue);
-      expect(records.first.target, contains('linagora'));
+      expect(records.first.target, contains('fastmail'));
       expect(records.first.port, greaterThan(0));
     });
 
     test('lookupSrvParallel() should return first successful result', () async {
       final client = DnsOverHttps.google(debugMode: true);
-      final records = await client.lookupSrvParallel('_jmap._tcp.linagora.com');
+      final records = await client.lookupSrvParallel('_jmap._tcp.fastmail.com');
 
       expect(records, isNotNull);
       expect(records.isNotEmpty, isTrue);
-      expect(records.first.target, contains('linagora'));
+      expect(records.first.target, contains('fastmail'));
       expect(records.first.priority, isA<int>());
       expect(records.first.weight, isA<int>());
     });
 
     test('lookupSrv() should still work with single resolver', () async {
       final client = DnsOverHttps.google(debugMode: true);
-      final records = await client.lookupSrv('_jmap._tcp.linagora.com');
+      final records = await client.lookupSrv('_jmap._tcp.fastmail.com');
 
       expect(records, isNotNull);
       expect(records, isA<List<SrvRecord>>());

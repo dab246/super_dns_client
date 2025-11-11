@@ -1,8 +1,8 @@
 # 🧭 super_dns_client
 
-A modern and lightweight Dart library for performing **DNS lookups** via  
-🔹 **DNS-over-HTTPS (DoH)** and  
-🔹 **traditional UDP/TCP resolvers** — including **System** and **Public SRV** discovery.
+A modern, lightweight, and **native-integrated** DNS resolver for Dart and Flutter —  
+supporting both **DNS-over-HTTPS (DoH)** and traditional **UDP/TCP lookups**  
+with **system-aware DNS discovery** across all major platforms.
 
 Built for Flutter, Dart CLI, and backend apps.
 
@@ -11,12 +11,12 @@ Built for Flutter, Dart CLI, and backend apps.
 ## 🚀 Features
 
 - 🔍 Query `A`, `AAAA`, `CNAME`, `SRV`, `TXT` records  
-- 🌐 Supports both **DoH** and **traditional UDP/TCP DNS**  
-- ⚙️ Auto-detects **System-configured DNS** (macOS, Linux, Android, iOS)  
-- 🧩 Public resolver support: Quad9, AdGuard, Yandex, OpenDNS, Cloudflare, Google, Mullvad, etc.  
-- 💾 Built-in TTL-based SRV cache for performance  
+- 🌐 Supports **DoH** and **traditional UDP/TCP DNS**  
+- 🧩 Native **System DNS detection** (macOS, Linux, Android, iOS)  
+- ⚙️ **Public resolver fallback** with automatic switching  
+- 💾 TTL-based SRV caching  
 - 🧱 Built with `universal_io`, `super_raw`, and `super_ip`  
-- ✅ Null-safe, well-tested, CI-integrated
+- ✅ Null-safe, CI-tested, production-ready
 
 ---
 
@@ -52,14 +52,14 @@ void main() async {
 
   // Example 2: SRV lookup via System-configured DNS
   final systemClient = SystemUdpSrvClient();
-  final systemRecords = await systemClient.lookupSrv('_jmap._tcp.linagora.com');
+  final systemRecords = await systemClient.lookupSrv('_jmap._tcp.example.com');
   for (var r in systemRecords) {
     print('SystemDNS → ${r.target}:${r.port}');
   }
 
   // Example 3: SRV lookup via Public DNS resolvers
   final publicClient = PublicUdpSrvClient();
-  final publicRecords = await publicClient.lookupSrv('_jmap._tcp.linagora.com');
+  final publicRecords = await publicClient.lookupSrv('_jmap._tcp.example.com');
   for (var r in publicRecords) {
     print('PublicDNS(${r.resolverName}) → ${r.target}:${r.port}');
   }
@@ -68,23 +68,37 @@ void main() async {
 
 ---
 
+## ⚙️ Platform-specific System DNS Detection
+
+| Platform | Method | Description |
+|-----------|---------|-------------|
+| **Android** | `ConnectivityManager.getLinkProperties()` | The plugin uses a native Kotlin bridge to fetch DNS servers from the currently active network interface. Requires `ACCESS_NETWORK_STATE` permission. |
+| **iOS** | `res_ninit()` via Objective-C helper | Calls the BSD resolver API to enumerate system DNS servers (`/etc/resolv.conf` equivalent). |
+| **macOS / Linux** | File parsing | Reads `/etc/resolv.conf` for configured nameservers. |
+| **Web** | Not supported | Browsers restrict raw DNS queries; DoH should be used instead. |
+
+> 🧠 System detection is handled automatically by `SystemUdpSrvClient`,  
+> which internally uses `PlatformSystemDns` to bridge native resolvers.
+
+---
+
 ## ⚙️ Available DNS Resolvers
 
 ### 🔸 DNS-over-HTTPS (DoH)
-| Provider   | Endpoint URL                          |
-|-------------|----------------------------------------|
-| Google      | `https://dns.google/dns-query`         |
+| Provider   | Endpoint URL |
+|-------------|------------------------------|
+| Google      | `https://dns.google/dns-query` |
 | Cloudflare  | `https://cloudflare-dns.com/dns-query` |
-| Quad9       | `https://dns.quad9.net/dns-query`      |
+| Quad9       | `https://dns.quad9.net/dns-query` |
 | AdGuard     | `https://dns.adguard-dns.com/dns-query` |
-| Mullvad     | `https://doh.mullvad.net/dns-query`    |
-| Yandex      | `https://dns.yandex.com/dns-query`     |
-| OpenDNS     | `https://doh.opendns.com/dns-query`    |
+| Mullvad     | `https://doh.mullvad.net/dns-query` |
+| Yandex      | `https://dns.yandex.com/dns-query` |
+| OpenDNS     | `https://doh.opendns.com/dns-query` |
 
 ### 🔸 Traditional (UDP/TCP)
-- System-configured resolvers (`/etc/resolv.conf`, Android `getprop`, iOS fallback)
-- Public resolvers (Quad9, AdGuard, Yandex, OpenDNS)
-- TCP fallback if UDP is truncated or timed out
+- System resolvers from platform configuration (Android, iOS, Linux, macOS)
+- Public resolvers (Quad9, AdGuard, Yandex, OpenDNS, Cloudflare)
+- TCP fallback for truncated UDP responses
 
 ---
 
@@ -93,6 +107,31 @@ void main() async {
 ```bash
 dart test
 ```
+
+---
+
+## 🌍 Example Output
+
+```
+DnsOverHttps.cloudflare::SRV → _jmap._tcp.example.com → jmap.example.com:443
+SystemUdpSrvClient::SRV → example.com:443
+PublicUdpSrvClient(quad9)::SRV → jmap.example.com:443
+```
+
+---
+
+## 🧠 Summary
+
+| Feature | Status |
+|----------|---------|
+| DNS-over-HTTPS | ✅ |
+| UDP/TCP resolver | ✅ |
+| System DNS detection (native) | ✅ |
+| Public resolver fallback | ✅ |
+| TTL cache | ✅ |
+| IPv6 support | ✅ |
+| Android native bridge | ✅ |
+| iOS native bridge | ✅ |
 
 ---
 
@@ -107,35 +146,6 @@ See [LICENSE](LICENSE) for details.
 
 Pull requests and ideas are welcome!  
 Open an issue or PR at [GitHub Issues](https://github.com/dab246/super_dns_client/issues).
-
----
-
-## 🌟 Example Output
-
-```
-DnsOverHttps.cloudflare::SRV → _jmap._tcp.linagora.com → jmap.linagora.com:443
-SystemUdpSrvClient::SRV → linagora.com:443
-PublicUdpSrvClient(quad9)::SRV → jmap.linagora.com:443
-```
-
----
-
-## 🧠 Summary
-
-| Feature | Status |
-|----------|---------|
-| DoH (Google/Cloudflare) | ✅ |
-| Binary DoH (Quad9, Mullvad) | ✅ |
-| UDP/TCP SRV resolver | ✅ |
-| System DNS detection | ✅ |
-| Public resolver list | ✅ |
-| TTL cache | ✅ |
-| IPv6 support | ✅ |
-
----
-
-> ✨ **Since v0.3.0**: `super_dns_client` is now a **hybrid DNS resolver** supporting  
-> both DoH and UDP/TCP SRV record lookups with automatic fallback.
 
 ---
 

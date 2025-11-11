@@ -16,10 +16,10 @@ void main() {
       expect(addresses.first.address, contains('.'));
     });
 
-    test('lookupDataByRRType SRV ( _jmap._tcp.linagora.com )', () async {
+    test('lookupDataByRRType SRV ( _jmap._tcp.fastmail.com )', () async {
       final client = DnsOverHttpsBinaryClient();
       final results = await client.lookupDataByRRType(
-        '_jmap._tcp.linagora.com',
+        '_jmap._tcp.fastmail.com',
         RRType.srv,
       );
 
@@ -30,11 +30,11 @@ void main() {
 
     test('lookupSrv should return parsed SRV records', () async {
       final client = DnsOverHttpsBinaryClient();
-      final records = await client.lookupSrv('_jmap._tcp.linagora.com');
+      final records = await client.lookupSrv('_jmap._tcp.fastmail.com');
 
       expect(records, isNotEmpty);
       expect(records.first.port, greaterThan(0));
-      expect(records.first.target, contains('linagora'));
+      expect(records.first.target, contains('fastmail'));
       expect(records.first.priority, isA<int>());
       expect(records.first.weight, isA<int>());
     });
@@ -66,7 +66,7 @@ void main() {
       final client = DnsOverHttpsBinaryClient(customResolvers: custom);
 
       try {
-        final records = await client.lookupSrv('_jmap._tcp.linagora.com');
+        final records = await client.lookupSrv('_jmap._tcp.fastmail.com');
         expect(records, isA<List<SrvRecord>>());
       } catch (e) {
         expect(e, isA<Exception>());

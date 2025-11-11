@@ -33,7 +33,7 @@ class MockUdpSrvClient extends BaseUdpSrvClient {
       return [
         SrvRecord(
           name: srvName,
-          target: 'mail.linagora.com',
+          target: 'mail.fastmail.com',
           port: 443,
           priority: 1,
           weight: 5,
@@ -45,7 +45,7 @@ class MockUdpSrvClient extends BaseUdpSrvClient {
     return [
       SrvRecord(
         name: srvName,
-        target: 'imap.linagora.com',
+        target: 'imap.fastmail.com',
         port: 993,
         priority: 10,
         weight: 20,
@@ -75,11 +75,11 @@ void main() {
 
     test('lookupSrv() should return SRV records (mocked)', () async {
       final mock = MockUdpSrvClient();
-      final records = await mock.lookupSrv('_jmap._tcp.linagora.com');
+      final records = await mock.lookupSrv('_jmap._tcp.fastmail.com');
 
       expect(records, isNotEmpty);
       final first = records.first;
-      expect(first.target, equals('imap.linagora.com'));
+      expect(first.target, equals('imap.fastmail.com'));
       expect(first.port, equals(993));
       expect(first.priority, equals(10));
       expect(first.weight, equals(20));
@@ -89,8 +89,8 @@ void main() {
 
     test('fallbacks to TCP if UDP truncated', () async {
       final mock = MockUdpSrvClient()..shouldTruncate = true;
-      final records = await mock.lookupSrv('_jmap._tcp.linagora.com');
-      expect(records.first.target, equals('mail.linagora.com'));
+      final records = await mock.lookupSrv('_jmap._tcp.fastmail.com');
+      expect(records.first.target, equals('mail.fastmail.com'));
       expect(mock.tcpCalled, isTrue);
     });
   });
@@ -143,13 +143,37 @@ void main() {
         reason: 'Must return a valid IPv4/IPv6 or fallback to 1.1.1.1',
       );
     });
+
+    test('returns system or fallback DNS safely', () async {
+      final resolver = SystemUdpSrvClient();
+      final servers = await resolver.getDnsServers();
+
+      expect(servers, isNotEmpty,
+          reason: 'Should always return at least one DNS server');
+
+      // Verify each address is valid
+      for (final ip in servers.map((e) => e.address)) {
+        expect(
+          InternetAddress.tryParse(ip),
+          isNotNull,
+          reason: 'Invalid IP address returned: $ip',
+        );
+      }
+
+      final joined = servers.map((e) => e.address).join(', ');
+      if (joined.contains('1.1.1.1') || joined.contains('8.8.8.8')) {
+        print('✅ Fallback DNS detected: $joined');
+      } else {
+        print('✅ System DNS detected: $joined');
+      }
+    });
   });
 
   group('🧪 Integration mock behavior', () {
     test('MockUdpSrvClient handles UDP failure gracefully', () async {
       final mock = MockUdpSrvClient()..shouldFailUdp = true;
       try {
-        await mock.lookupSrv('_jmap._tcp.linagora.com');
+        await mock.lookupSrv('_jmap._tcp.fastmail.com');
       } catch (e) {
         expect(e, isA<TimeoutException>());
       }
