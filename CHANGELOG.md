@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.6
+### 🛠️ Changed
+
+Set a default `timeout` value for the DNS client to improve request reliability.
+
 ## 0.3.5
 ### 🛠 Fixed
 - Fixed **System DNS resolution** behavior on **Android** and **iOS**.  
