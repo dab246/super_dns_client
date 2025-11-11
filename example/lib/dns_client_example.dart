@@ -11,7 +11,7 @@ Future<void> main() async {
   }
 
   final srvGoogle = await dohGoogle.lookupDataByRRType(
-    '_jmap._tcp.linagora.com',
+    '_jmap._tcp.fastmail.com',
     RRType.srv,
   );
   for (var srv in srvGoogle) {
@@ -21,7 +21,7 @@ Future<void> main() async {
   print('\n🔹 Example 2: JSON-based DoH (Cloudflare)');
   final dohCloudflare = DnsOverHttps.cloudflare();
   final srvCloudflare = await dohCloudflare.lookupDataByRRType(
-    '_jmap._tcp.linagora.com',
+    '_jmap._tcp.fastmail.com',
     RRType.srv,
   );
   for (var srv in srvCloudflare) {
@@ -36,7 +36,7 @@ Future<void> main() async {
     print('DnsOverHttpsBinary::A → ${ip.address}');
   }
 
-  final srvRecords = await binaryClient.lookupSrv('_jmap._tcp.linagora.com');
+  final srvRecords = await binaryClient.lookupSrv('_jmap._tcp.fastmail.com');
   for (var record in srvRecords) {
     print(
       'DnsOverHttpsBinary::SRV → priority=${record.priority}, '
@@ -58,7 +58,7 @@ Future<void> main() async {
 
   try {
     final customSrvRecords =
-        await binaryCustom.lookupSrv('_jmap._tcp.linagora.com');
+        await binaryCustom.lookupSrv('_jmap._tcp.fastmail.com');
     for (var record in customSrvRecords) {
       print(
         'DnsOverHttpsBinary(mullvad)::SRV → '
@@ -73,7 +73,7 @@ Future<void> main() async {
   print('\n🔹 Example 5: Error handling');
   try {
     // Tên resolver không còn cần thiết — gọi sai sẽ tự động duyệt tất cả.
-    await binaryClient.lookupSrv('example.com');
+    await binaryClient.lookupSrv('fastmail.com');
   } on SocketException catch (e) {
     print('❌ Network error: $e');
   } on Exception catch (e) {
@@ -84,7 +84,7 @@ Future<void> main() async {
   print('\n🔹 Example 6: System-configured DNS SRV Lookup');
   final systemResolver = SystemUdpSrvClient();
   final systemRecords =
-      await systemResolver.lookupSrv('_jmap._tcp.linagora.com');
+      await systemResolver.lookupSrv('_jmap._tcp.fastmail.com');
 
   if (systemRecords.isEmpty) {
     print('SystemUdpSrvClient: No SRV records found.');
@@ -102,7 +102,7 @@ Future<void> main() async {
   print('\n🔹 Example 7: Public (Open) DNS SRV Lookup');
   final publicResolver = PublicUdpSrvClient();
   final publicResults =
-      await publicResolver.lookupSrv('_jmap._tcp.linagora.com');
+      await publicResolver.lookupSrv('_jmap._tcp.fastmail.com');
 
   if (publicResults.isEmpty) {
     print('PublicUdpSrvClient: No SRV records found.');
