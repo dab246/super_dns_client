@@ -17,8 +17,9 @@ import 'package:universal_io/io.dart';
 abstract class DnsClient {
   /// Whether to print debug logs.
   final bool debugMode;
+  final Duration timeout;
 
-  DnsClient({this.debugMode = false});
+  DnsClient({this.debugMode = false, this.timeout = const Duration(seconds: 5)});
 
   /// Utility method for safe debug printing
   void debug(Object? message) {

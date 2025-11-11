@@ -5,7 +5,7 @@ import 'base_udp_srv_client.dart';
 /// Resolver that uses the system-configured DNS servers.
 /// It does NOT fallback to public resolvers — that should be handled by a higher-level resolver.
 class SystemUdpSrvClient extends BaseUdpSrvClient {
-  SystemUdpSrvClient({super.debugMode});
+  SystemUdpSrvClient({super.debugMode, super.timeout});
 
   @override
   Future<List<InternetAddress>> getDnsServers({String? host}) async {

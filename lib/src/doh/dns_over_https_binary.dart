@@ -32,15 +32,13 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   ];
 
   final List<DnsResolver> resolvers;
-  final Duration timeout;
 
   DnsOverHttpsBinaryClient({
     List<DnsResolver>? customResolvers,
-    Duration? timeout,
     super.debugMode,
-  })  : timeout = timeout ?? const Duration(seconds: 5),
-        resolvers = [...defaultResolvers, ...?customResolvers] {
-    _httpClient.connectionTimeout = this.timeout;
+    super.timeout,
+  }) : resolvers = [...defaultResolvers, ...?customResolvers] {
+    _httpClient.connectionTimeout = timeout;
   }
 
   @override

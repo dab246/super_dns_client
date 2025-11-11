@@ -20,6 +20,7 @@ class PublicUdpSrvClient extends BaseUdpSrvClient {
   PublicUdpSrvClient({
     List<InternetAddress>? customPublicDns,
     super.debugMode,
+    super.timeout,
   }) : _publicDns = [..._defaultPublicDns, ...?customPublicDns];
 
   @override

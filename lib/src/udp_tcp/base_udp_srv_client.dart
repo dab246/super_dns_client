@@ -12,7 +12,7 @@ import '../../super_dns_client.dart' show DnsClient, RRType;
 /// Provides shared UDP/TCP logic, packet parsing, and fallback behavior.
 /// Subclasses only need to implement [getDnsServers].
 abstract class BaseUdpSrvClient extends DnsClient {
-  BaseUdpSrvClient({super.debugMode});
+  BaseUdpSrvClient({super.debugMode, super.timeout});
 
   /// Returns the list of DNS servers to query.
   Future<List<InternetAddress>> getDnsServers({String? host});
@@ -35,27 +35,35 @@ abstract class BaseUdpSrvClient extends DnsClient {
 
     for (final dns in dnsServers) {
       try {
-        final udp = await _lookupSrvOverUdp(srvName, dns);
+        final udp = await _lookupSrvOverUdp(srvName, dns, timeout: timeout);
         if (udp.isNotEmpty) {
           debug('[BaseUdpSrvClient] ✅ ${dns.address} responded via UDP');
           return udp;
+        } else {
+          debug(
+            '[BaseUdpSrvClient]⚠️ No SRV record found from ${dns.address} via UDP',
+          );
         }
       } catch (e) {
-        debug('[BaseUdpSrvClient] ⚠️ UDP failed at ${dns.address}: $e');
+        debug('[BaseUdpSrvClient] ❌️ UDP failed at ${dns.address}: $e');
       }
 
       try {
-        final tcp = await _lookupSrvOverTcp(srvName, dns);
+        final tcp = await _lookupSrvOverTcp(srvName, dns, timeout: timeout);
         if (tcp.isNotEmpty) {
           debug('[BaseUdpSrvClient] ✅ ${dns.address} responded via TCP');
           return tcp;
+        } else {
+          debug(
+            '[BaseUdpSrvClient]⚠️ No SRV record found from ${dns.address} via TCP',
+          );
         }
       } catch (e) {
         debug('[BaseUdpSrvClient] ❌ TCP failed at ${dns.address}: $e');
       }
     }
 
-    debug('[BaseUdpSrvClient] ❌ No SRV records found for $srvName');
+    debug('[BaseUdpSrvClient] ⚠️ No SRV records found for $srvName');
     throw Exception('No SRV records found for $srvName');
   }
 
@@ -65,8 +73,9 @@ abstract class BaseUdpSrvClient extends DnsClient {
 
   Future<List<SrvRecord>> _lookupSrvOverUdp(
     String srvName,
-    InternetAddress dnsServer,
-  ) async {
+    InternetAddress dnsServer, {
+    Duration? timeout,
+  }) async {
     final packet = super_dns.DnsPacket()
       ..id = DateTime.now().millisecondsSinceEpoch & 0xFFFF
       ..isRecursionDesired = true
@@ -87,6 +96,15 @@ abstract class BaseUdpSrvClient extends DnsClient {
 
     final completer = Completer<List<SrvRecord>>();
 
+    final Timer? timer = timeout != null
+        ? Timer(timeout, () {
+            if (!completer.isCompleted) {
+              completer.completeError(TimeoutException('UDP timeout'));
+              socket.close();
+            }
+          })
+        : null;
+
     socket.listen((event) {
       if (event == RawSocketEvent.read) {
         final datagram = socket.receive();
@@ -104,6 +122,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
           completer.completeError(e);
         } finally {
           socket.close();
+          timer?.cancel();
         }
       }
     });
@@ -113,8 +132,9 @@ abstract class BaseUdpSrvClient extends DnsClient {
 
   Future<List<SrvRecord>> _lookupSrvOverTcp(
     String srvName,
-    InternetAddress dnsServer,
-  ) async {
+    InternetAddress dnsServer, {
+    Duration? timeout,
+  }) async {
     final packet = super_dns.DnsPacket()
       ..id = DateTime.now().millisecondsSinceEpoch & 0xFFFF
       ..isRecursionDesired = true
@@ -126,7 +146,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
       ];
 
     final bytes = packet.toImmutableBytes();
-    final socket = await Socket.connect(dnsServer, 53);
+    final socket = await Socket.connect(dnsServer, 53, timeout: timeout);
     final writer = RawWriter.withCapacity(bytes.length + 2)
       ..writeUint16(bytes.length)
       ..writeBytes(bytes);
@@ -157,7 +177,11 @@ abstract class BaseUdpSrvClient extends DnsClient {
       },
     );
 
-    return completer.future;
+    if (timeout != null) {
+      return completer.future.timeout(timeout);
+    } else {
+      return completer.future;
+    }
   }
 
   // ---------------------------------------------------------------------------
