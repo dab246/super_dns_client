@@ -1,6 +1,6 @@
 name: super_dns_client
 description: A modern and lightweight Dart library for performing DNS-over-HTTPS (DoH) lookups. Supports multiple resolvers and easy integration for Flutter and server-side apps.
-version: 0.3.4
+version: 0.3.5
 homepage: https://github.com/dab246/super_dns_client
 repository: https://github.com/dab246/super_dns_client
 issue_tracker: https://github.com/dab246/super_dns_client/issues
