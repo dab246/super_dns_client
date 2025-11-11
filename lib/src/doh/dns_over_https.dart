@@ -12,16 +12,14 @@ class DnsOverHttps extends DnsClient {
   final String url;
   final Uri _uri;
   final bool maximalPrivacy;
-  final Duration timeout;
 
   DnsOverHttps(
     this.url, {
-    Duration? timeout,
     this.maximalPrivacy = false,
     super.debugMode,
-  })  : timeout = timeout ?? const Duration(seconds: 5),
-        _uri = Uri.parse(url) {
-    _client.connectionTimeout = this.timeout;
+    super.timeout,
+  }) : _uri = Uri.parse(url) {
+    _client.connectionTimeout = timeout;
   }
 
   /// Close the underlying HTTP client.
@@ -29,7 +27,10 @@ class DnsOverHttps extends DnsClient {
 
   /// Factory: Google DoH endpoint.
   /// [Google DNS-over-HTTPS documentation](https://developers.google.com/speed/public-dns/docs/dns-over-https)
-  factory DnsOverHttps.google({Duration? timeout, bool debugMode = false}) =>
+  factory DnsOverHttps.google({
+    Duration timeout = const Duration(seconds: 5),
+    bool debugMode = false,
+  }) =>
       DnsOverHttps(
         'https://dns.google/resolve',
         timeout: timeout,
@@ -39,7 +40,7 @@ class DnsOverHttps extends DnsClient {
   /// Factory: Cloudflare DoH endpoint.
   /// [Cloudflare DNS-over-HTTPS documentation](https://developers.cloudflare.com/1.1.1.1/dns-over-https/json-format/)
   factory DnsOverHttps.cloudflare({
-    Duration? timeout,
+    Duration timeout = const Duration(seconds: 5),
     bool debugMode = false,
   }) =>
       DnsOverHttps(
@@ -49,7 +50,7 @@ class DnsOverHttps extends DnsClient {
       );
 
   factory DnsOverHttps.empty({
-    Duration? timeout,
+    Duration timeout = const Duration(seconds: 5),
     bool debugMode = false,
   }) =>
       DnsOverHttps(

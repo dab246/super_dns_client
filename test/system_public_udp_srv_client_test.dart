@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:universal_io/io.dart';
 
 import 'package:super_dns_client/src/models/srv_record.dart';
 import 'package:super_dns_client/src/udp_tcp/base_udp_srv_client.dart';
 import 'package:super_dns_client/src/udp_tcp/public_udp_srv_client.dart';
 import 'package:super_dns_client/src/udp_tcp/system_udp_srv_client.dart';
 import 'package:test/test.dart';
+import 'package:universal_io/io.dart';
 
 /// Mock class to simulate network packets and responses
 class MockUdpSrvClient extends BaseUdpSrvClient {
