@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.4
+### Changed
+
+- Replaced parallel SRV lookup with sequential lookup in DnsOverHttps to improve stability and resolver consistency.
+- Ensured predictable fallback order between Google and Cloudflare resolvers.
+- Minor code refactor for clarity and better logging around sequential resolution.
+
 ## 0.3.3
 ### Changed
 - Updated dependency to `super_dns >=0.1.1` to support Flutter Web builds.
