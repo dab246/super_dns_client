@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.8
+### Fixed
+
+- **Fixed InternetAddress type mismatch** when building for Web by unifying imports through `package:universal_io/io.dart`.
+- Ensured consistent `Future<List<InternetAddress>>` return type across all platforms.
+
 ## 0.3.7
 ### ✨ New Features
 - **Native system DNS integration** for Android and iOS:
