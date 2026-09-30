@@ -1,20 +1,24 @@
-name: Anazyzer
+name: Analyzer
 
 on:
   pull_request:
     branches:
-      - master
+      - main
+
+permissions:
+  contents: read
+
 jobs:
-  package-analyze:
-    runs-on: ubuntu-18.04
+  analyze:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: axel-op/dart-package-analyzer@v3
+      - uses: actions/checkout@v4
         with:
-          # Required:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-          # Optional:
-          # relativePath: lib
-          minAnnotationLevel: info
-
-
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze --no-fatal-infos
