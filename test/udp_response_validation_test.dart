@@ -137,4 +137,60 @@ void main() {
       throwsException,
     );
   });
+
+  group('TCP fallback', () {
+    late ServerSocket tcpServer;
+
+    setUp(() async {
+      tcpServer =
+          await ServerSocket.bind(InternetAddress.loopbackIPv4, server.port);
+      // Truncated UDP reply pushes the client onto TCP.
+      serve((q, from) {
+        final truncated = super_dns.DnsPacket()
+          ..isResponse = true
+          ..isTruncated = true
+          ..id = q.id
+          ..questions = q.questions;
+        server.send(truncated.toImmutableBytes(), from.address, from.port);
+      });
+    });
+
+    tearDown(() => tcpServer.close());
+
+    void serveTcp(List<int> Function(super_dns.DnsPacket query) reply) {
+      tcpServer.listen((client) {
+        final buffer = <int>[];
+        client.listen((chunk) {
+          buffer.addAll(chunk);
+          if (buffer.length < 2) return;
+          final length = (buffer[0] << 8) | buffer[1];
+          if (buffer.length < 2 + length) return;
+          final query = super_dns.DnsPacket()
+            ..decodeSelf(RawReader.withBytes(buffer.sublist(2, 2 + length)));
+          final body = reply(query);
+          client
+            ..add([body.length >> 8, body.length & 0xFF, ...body])
+            ..close();
+        });
+      });
+    }
+
+    test('accepts a TCP reply matching id and question', () async {
+      serveTcp((q) => _srvResponse(q));
+
+      final records =
+          await _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName);
+
+      expect(records.single.target, 'mail.example.com');
+    });
+
+    test('rejects a TCP reply with a wrong id', () async {
+      serveTcp((q) => _srvResponse(q, id: (q.id + 1) & 0xFFFF));
+
+      await expectLater(
+        _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName),
+        throwsException,
+      );
+    });
+  });
 }
