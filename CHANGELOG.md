@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.9
+### Fixed
+
+- **`DnsOverHttpsBinaryClient` default resolver** changed from Quad9 to AdGuard. Quad9 now requires HTTP/2, which `HttpClient` does not support, so `lookup()` and `lookupDataByRRType()` failed with the default settings.
+- Removed Quad9, Mullvad (HTTP/2 only) and Yandex (redirects to a captcha page) from `DnsOverHttpsBinaryClient.defaultResolvers`.
+- DoH POST requests now send `Content-Length` instead of a chunked body, which OpenDNS rejected with HTTP 400.
+
 ## 0.3.8
 ### Fixed
 
