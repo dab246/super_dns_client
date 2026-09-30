@@ -67,7 +67,7 @@ abstract class DnsClient {
   /// ```
   ///
   /// - [srvName]: must include the `_service._proto.domain` format.
-  /// - [resolverName]: optional label (e.g. `"quad9"`, `"adguard"`) for custom resolvers.
+  /// - [resolverName]: optional label (e.g. `"adguard"`, `"opendns"`) for custom resolvers.
   /// - [timeout]: max waiting time for the query.
   Future<List<SrvRecord>> lookupSrv(String srvName);
 }

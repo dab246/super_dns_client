@@ -89,11 +89,11 @@ void main() async {
 |-------------|------------------------------|
 | Google      | `https://dns.google/dns-query` |
 | Cloudflare  | `https://cloudflare-dns.com/dns-query` |
-| Quad9       | `https://dns.quad9.net/dns-query` |
 | AdGuard     | `https://dns.adguard-dns.com/dns-query` |
-| Mullvad     | `https://doh.mullvad.net/dns-query` |
-| Yandex      | `https://dns.yandex.com/dns-query` |
 | OpenDNS     | `https://doh.opendns.com/dns-query` |
+
+> ⚠️ `DnsOverHttpsBinaryClient` sends requests over HTTP/1.1, so custom DoH resolvers must accept HTTP/1.1.  
+> Resolvers that require HTTP/2 (e.g. Quad9, Mullvad) respond with an error and cannot be used.
 
 ### 🔸 Traditional (UDP/TCP)
 - System resolvers from platform configuration (Android, iOS, Linux, macOS)
