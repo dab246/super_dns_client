@@ -28,7 +28,7 @@ Future<void> main() async {
     print('DnsOverHttps.cloudflare::SRV → $srv');
   }
 
-  print('\n🔹 Example 3: Binary DoH client (Quad9, AdGuard, Yandex, etc.)');
+  print('\n🔹 Example 3: Binary DoH client (AdGuard, OpenDNS)');
   final binaryClient = DnsOverHttpsBinaryClient(debugMode: true);
 
   final aRecords = await binaryClient.lookup('google.com');

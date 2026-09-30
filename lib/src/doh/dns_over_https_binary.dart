@@ -9,25 +9,12 @@ class DnsOverHttpsBinaryClient extends DnsClient {
 
   static final List<DnsResolver> defaultResolvers = [
     DnsResolver(
-      name: 'quad9',
-      url: Uri.parse('https://dns.quad9.net/dns-query'),
-    ),
-    DnsResolver(
       name: 'adguard',
       url: Uri.parse('https://dns.adguard-dns.com/dns-query'),
     ),
     DnsResolver(
-      name: 'yandex',
-      url: Uri.parse('https://dns.yandex.com/dns-query'),
-    ),
-    DnsResolver(
       name: 'opendns',
       url: Uri.parse('https://doh.opendns.com/dns-query'),
-    ),
-    DnsResolver(
-      name: 'mullvad',
-      url: Uri.parse('https://doh.mullvad.net/dns-query'),
-      supportsGet: true, // Mullvad only support GET
     ),
   ];
 
@@ -44,7 +31,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   @override
   Future<List<InternetAddress>> lookup(
     String hostname, {
-    String resolverName = 'quad9',
+    String resolverName = 'adguard',
   }) async {
     final resolver = _getResolver(resolverName);
     final queryBytes = _buildDnsQuery(hostname, RRType.a);
@@ -63,7 +50,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
   Future<List<String>> lookupDataByRRType(
     String hostname,
     RRType rrType, {
-    String resolverName = 'quad9',
+    String resolverName = 'adguard',
   }) async {
     final resolver = _getResolver(resolverName);
     final queryBytes = _buildDnsQuery(hostname, rrType);
@@ -159,6 +146,7 @@ class DnsOverHttpsBinaryClient extends DnsClient {
       final request = await _httpClient.postUrl(resolver);
       request.headers.contentType = ContentType('application', 'dns-message');
       request.headers.add('accept', 'application/dns-message');
+      request.contentLength = queryBytes.length;
       request.add(queryBytes);
 
       final response = await request.close();

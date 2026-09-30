@@ -38,6 +38,19 @@ void main() {
       expect(records.first.priority, isA<int>());
       expect(records.first.weight, isA<int>());
     });
+
+    for (final resolver in DnsOverHttpsBinaryClient.defaultResolvers) {
+      test('lookup( google.com ) via ${resolver.name} should succeed',
+          () async {
+        final client = DnsOverHttpsBinaryClient();
+        final addresses = await client.lookup(
+          'google.com',
+          resolverName: resolver.name,
+        );
+
+        expect(addresses, isNotEmpty);
+      });
+    }
   });
 
   group('DnsOverHttpsBinaryClient (custom resolver)', () {
