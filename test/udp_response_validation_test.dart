@@ -21,12 +21,13 @@ List<int> _srvResponse(
   super_dns.DnsPacket query, {
   int? id,
   String? questionName,
+  String target = 'mail.example.com',
 }) {
   final rdata = RawWriter.withCapacity(64)
     ..writeUint16(10)
     ..writeUint16(5)
     ..writeUint16(443);
-  for (final label in 'mail.example.com'.split('.')) {
+  for (final label in target.split('.')) {
     rdata
       ..writeUint8(label.length)
       ..writeBytes(utf8.encode(label));
@@ -93,7 +94,11 @@ void main() {
     serve((q, from) {
       server
         ..send(
-          _srvResponse(q, id: (q.id + 1) & 0xFFFF),
+          _srvResponse(
+            q,
+            id: (q.id + 1) & 0xFFFF,
+            target: 'evil.example.com',
+          ),
           from.address,
           from.port,
         )
