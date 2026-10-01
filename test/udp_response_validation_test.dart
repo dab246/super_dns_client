@@ -231,6 +231,29 @@ void main() {
     );
   });
 
+  test('rejects a reply from an unexpected source address', () async {
+    // Loopback has a single address on macOS, so spoof from a local
+    // non-loopback one, keeping the DNS server's port.
+    final interfaces =
+        await NetworkInterface.list(type: InternetAddressType.IPv4);
+    final local = interfaces
+        .expand((i) => i.addresses)
+        .where((a) => !a.isLoopback)
+        .firstOrNull;
+    if (local == null) {
+      markTestSkipped('No non-loopback IPv4 address');
+      return;
+    }
+    final spoofer = await RawDatagramSocket.bind(local, server.port);
+    extra.add(spoofer);
+    serve((q, from) => spoofer.send(_srvResponse(q), local, from.port));
+
+    await expectLater(
+      _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName),
+      throwsException,
+    );
+  });
+
   group('TCP fallback', () {
     late ServerSocket tcpServer;
 
