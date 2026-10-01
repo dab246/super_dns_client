@@ -141,6 +141,37 @@ void main() {
     );
   });
 
+  test('ignores replies that do not answer the SRV question', () async {
+    List<int> spoofed(
+      super_dns.DnsPacket q,
+      void Function(super_dns.DnsPacket) edit,
+    ) {
+      final p = super_dns.DnsPacket()
+        ..decodeSelf(
+          RawReader.withBytes(_srvResponse(q, target: 'evil.example.com')),
+        );
+      edit(p);
+      return p.toImmutableBytes();
+    }
+
+    serve((q, from) {
+      for (final reply in [
+        spoofed(q, (p) => p.isResponse = false),
+        spoofed(q, (p) => p.questions = []),
+        spoofed(q, (p) => p.questions.single.type = 1),
+        spoofed(q, (p) => p.questions.single.classy = 3),
+        _srvResponse(q),
+      ]) {
+        server.send(reply, from.address, from.port);
+      }
+    });
+
+    final records =
+        await _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName);
+
+    expect(records.single.target, 'mail.example.com');
+  });
+
   test('rejects a reply from an unexpected source port', () async {
     final spoofer =
         await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);
