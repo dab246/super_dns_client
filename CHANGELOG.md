@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.11
+### Added
+
+- **iOS: Swift Package Manager support.** The plugin now ships `ios/super_dns_client/Package.swift`, so apps with Swift Package Manager enabled no longer need CocoaPods for it. CocoaPods still works.
+
+### Changed
+
+- The iOS plugin class is now Objective-C, because Swift Package Manager can't mix Swift and Objective-C in one target. The `getSystemDns` method channel behaves the same.
+- Allow `equatable` 3.x and `freezed_annotation` 3.x.
+
 ## 0.3.10
 ### Fixed
 
