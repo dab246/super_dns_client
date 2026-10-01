@@ -15,10 +15,10 @@ on Android, iOS, macOS, and desktop platforms.
   s.author           = { 'Dat Vu' => 'datx1995@gmail.com' }
   s.source           = { :path => '.' }
 
-  s.source_files = 'Classes/**/*.{h,m,swift}'
+  s.source_files = 'super_dns_client/Sources/super_dns_client/**/*.{h,m}'
+  s.public_header_files = 'super_dns_client/Sources/super_dns_client/include/**/*.h'
   s.dependency       'Flutter'
   s.platform         = :ios, '12.0'
-  s.swift_version    = '5.0'
 
   # Flutter.framework does not contain a i386 slice.
     s.pod_target_xcconfig = {
