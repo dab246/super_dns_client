@@ -20,9 +20,9 @@ dependencies:
     sdk: flutter
 
   http: ^1.2.2
-  freezed_annotation: ^2.4.4
+  freezed_annotation: ">=2.4.4 <4.0.0"
   json_annotation: ^4.9.0
-  equatable: ^2.0.5
+  equatable: ">=2.0.5 <4.0.0"
   super_raw: ^0.1.0
   super_dns: ^0.1.1
   universal_io: ^2.2.2
