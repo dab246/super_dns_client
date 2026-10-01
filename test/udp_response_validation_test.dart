@@ -187,6 +187,20 @@ void main() {
     expect(records.single.target, 'mail.example.com');
   });
 
+  test('ignores an undecodable datagram and waits for the matching one',
+      () async {
+    serve((q, from) {
+      server
+        ..send([0xde, 0xad], from.address, from.port)
+        ..send(_srvResponse(q), from.address, from.port);
+    });
+
+    final records =
+        await _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName);
+
+    expect(records.single.target, 'mail.example.com');
+  });
+
   test('rejects a reply from an unexpected source port', () async {
     final spoofer =
         await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);
