@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:super_dns/super_dns.dart' as super_dns;
 import 'package:super_dns_client/src/models/srv_record.dart';
@@ -12,7 +13,12 @@ import '../../super_dns_client.dart' show DnsClient, RRType;
 /// Provides shared UDP/TCP logic, packet parsing, and fallback behavior.
 /// Subclasses only need to implement [getDnsServers].
 abstract class BaseUdpSrvClient extends DnsClient {
-  BaseUdpSrvClient({super.debugMode, super.timeout});
+  BaseUdpSrvClient({super.debugMode, super.timeout, this.dnsPort = 53});
+
+  /// DNS server port; overridable for tests.
+  final int dnsPort;
+
+  static final Random _txIdRandom = Random.secure();
 
   /// Returns the list of DNS servers to query.
   Future<List<InternetAddress>> getDnsServers({String? host});
@@ -71,20 +77,38 @@ abstract class BaseUdpSrvClient extends DnsClient {
   // Internal shared UDP/TCP logic
   // ---------------------------------------------------------------------------
 
+  super_dns.DnsPacket _buildSrvQuery(String srvName) => super_dns.DnsPacket()
+    ..id = _txIdRandom.nextInt(0x10000)
+    ..isRecursionDesired = true
+    ..questions = [
+      super_dns.DnsQuestion()
+        ..name = _stripTrailingDot(srvName)
+        ..type = super_dns.DnsResourceRecord.typeServerDiscovery
+        ..classy = super_dns.DnsResourceRecord.classInternetAddress,
+    ];
+
+  // Reject answers not tied to our query (spoofed or stray datagrams).
+  bool _matchesQuery(super_dns.DnsPacket response, super_dns.DnsPacket query) {
+    if (!response.isResponse || response.id != query.id) return false;
+    if (response.questions.length != 1) return false;
+    final asked = query.questions.single;
+    final answered = response.questions.single;
+    return _normalizeName(answered.name) == _normalizeName(asked.name) &&
+        answered.type == asked.type &&
+        answered.classy == asked.classy;
+  }
+
+  String _normalizeName(String name) => name.toLowerCase();
+
+  String _stripTrailingDot(String name) =>
+      name.endsWith('.') ? name.substring(0, name.length - 1) : name;
+
   Future<List<SrvRecord>> _lookupSrvOverUdp(
     String srvName,
     InternetAddress dnsServer, {
     Duration? timeout,
   }) async {
-    final packet = super_dns.DnsPacket()
-      ..id = DateTime.now().millisecondsSinceEpoch & 0xFFFF
-      ..isRecursionDesired = true
-      ..questions = [
-        super_dns.DnsQuestion()
-          ..name = srvName
-          ..type = super_dns.DnsResourceRecord.typeServerDiscovery
-          ..classy = super_dns.DnsResourceRecord.classInternetAddress,
-      ];
+    final packet = _buildSrvQuery(srvName);
 
     final socket = await RawDatagramSocket.bind(
       dnsServer.type == InternetAddressType.IPv6
@@ -92,7 +116,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
           : InternetAddress.anyIPv4,
       0,
     );
-    socket.send(packet.toImmutableBytes(), dnsServer, 53);
+    socket.send(packet.toImmutableBytes(), dnsServer, dnsPort);
 
     final completer = Completer<List<SrvRecord>>();
 
@@ -106,24 +130,29 @@ abstract class BaseUdpSrvClient extends DnsClient {
         : null;
 
     socket.listen((event) {
-      if (event == RawSocketEvent.read) {
-        final datagram = socket.receive();
-        if (datagram == null) return;
+      if (event != RawSocketEvent.read || completer.isCompleted) return;
+      final datagram = socket.receive();
+      if (datagram == null) return;
+      if (datagram.address != dnsServer || datagram.port != dnsPort) return;
 
-        try {
-          final response = super_dns.DnsPacket()
-            ..decodeSelf(RawReader.withBytes(datagram.data));
-          if (response.isTruncated) {
-            completer.complete([]);
-          } else {
-            completer.complete(_parseSrvAnswers(response));
-          }
-        } catch (e) {
-          completer.completeError(e);
-        } finally {
-          socket.close();
-          timer?.cancel();
-        }
+      final super_dns.DnsPacket response;
+      try {
+        response = super_dns.DnsPacket()
+          ..decodeSelf(RawReader.withBytes(datagram.data));
+      } catch (_) {
+        return;
+      }
+      if (!_matchesQuery(response, packet)) return;
+
+      try {
+        completer.complete(
+          response.isTruncated ? <SrvRecord>[] : _parseSrvAnswers(response),
+        );
+      } catch (e) {
+        completer.completeError(e);
+      } finally {
+        socket.close();
+        timer?.cancel();
       }
     });
 
@@ -135,18 +164,10 @@ abstract class BaseUdpSrvClient extends DnsClient {
     InternetAddress dnsServer, {
     Duration? timeout,
   }) async {
-    final packet = super_dns.DnsPacket()
-      ..id = DateTime.now().millisecondsSinceEpoch & 0xFFFF
-      ..isRecursionDesired = true
-      ..questions = [
-        super_dns.DnsQuestion()
-          ..name = srvName
-          ..type = super_dns.DnsResourceRecord.typeServerDiscovery
-          ..classy = super_dns.DnsResourceRecord.classInternetAddress,
-      ];
+    final packet = _buildSrvQuery(srvName);
 
     final bytes = packet.toImmutableBytes();
-    final socket = await Socket.connect(dnsServer, 53, timeout: timeout);
+    final socket = await Socket.connect(dnsServer, dnsPort, timeout: timeout);
     final writer = RawWriter.withCapacity(bytes.length + 2)
       ..writeUint16(bytes.length)
       ..writeBytes(bytes);
@@ -164,6 +185,9 @@ abstract class BaseUdpSrvClient extends DnsClient {
           final length = reader.readUint16();
           final dnsResponse = super_dns.DnsPacket()
             ..decodeSelf(reader.readRawReader(length));
+          if (!_matchesQuery(dnsResponse, packet)) {
+            throw Exception('DNS response does not match query');
+          }
           completer.complete(_parseSrvAnswers(dnsResponse));
         } catch (e) {
           completer.completeError(e);
