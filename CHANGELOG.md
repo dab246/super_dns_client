@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.10
+### Fixed
+
+- **SRV lookups over UDP/TCP could accept a spoofed reply.** `BaseUdpSrvClient` (used by `SystemUdpSrvClient` and `PublicUdpSrvClient`) now uses a random transaction id from `Random.secure()` instead of the clock.
+- UDP replies are ignored unless they come from the queried server's address and port, decode as DNS, and match the query's id, question name (case-insensitive), type and class. If no matching reply arrives, the lookup times out as before.
+- A TCP reply that does not match the query now fails the lookup.
+- SRV names with a trailing dot (`_xmpp-client._tcp.jabber.org.`) now resolve. The trailing dot used to produce a malformed query that returned no records.
+
+### Added
+
+- `dnsPort` constructor parameter on `BaseUdpSrvClient` (default `53`).
+
 ## 0.3.9
 ### Fixed
 
