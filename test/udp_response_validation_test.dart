@@ -201,6 +201,24 @@ void main() {
     expect(records.single.target, 'mail.example.com');
   });
 
+  test(
+    'fails instead of hanging on a malformed SRV answer',
+    () async {
+      serve((q, from) {
+        final reply = super_dns.DnsPacket()
+          ..decodeSelf(RawReader.withBytes(_srvResponse(q)));
+        reply.answers.single.data = [0, 10];
+        server.send(reply.toImmutableBytes(), from.address, from.port);
+      });
+
+      await expectLater(
+        _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName),
+        throwsException,
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 5)),
+  );
+
   test('rejects a reply from an unexpected source port', () async {
     final spoofer =
         await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);
