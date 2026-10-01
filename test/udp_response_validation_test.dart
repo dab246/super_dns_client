@@ -90,6 +90,21 @@ void main() {
     expect(records.single.target, 'mail.example.com');
   });
 
+  test('sends a well-formed SRV query for a trailing-dot name', () async {
+    late super_dns.DnsPacket received;
+    serve((q, from) {
+      received = q;
+      server.send(_srvResponse(q), from.address, from.port);
+    });
+
+    await _LoopbackUdpSrvClient(server.port).lookupSrv('$_srvName.');
+
+    expect(
+      received.questions.single.type,
+      super_dns.DnsResourceRecord.typeServerDiscovery,
+    );
+  });
+
   test('ignores a wrong-id reply and waits for the matching one', () async {
     serve((q, from) {
       server

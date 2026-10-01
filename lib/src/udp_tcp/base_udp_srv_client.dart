@@ -82,7 +82,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
     ..isRecursionDesired = true
     ..questions = [
       super_dns.DnsQuestion()
-        ..name = srvName
+        ..name = _stripTrailingDot(srvName)
         ..type = super_dns.DnsResourceRecord.typeServerDiscovery
         ..classy = super_dns.DnsResourceRecord.classInternetAddress,
     ];
@@ -98,10 +98,10 @@ abstract class BaseUdpSrvClient extends DnsClient {
         answered.classy == asked.classy;
   }
 
-  String _normalizeName(String name) {
-    final lower = name.toLowerCase();
-    return lower.endsWith('.') ? lower.substring(0, lower.length - 1) : lower;
-  }
+  String _normalizeName(String name) => _stripTrailingDot(name.toLowerCase());
+
+  String _stripTrailingDot(String name) =>
+      name.endsWith('.') ? name.substring(0, name.length - 1) : name;
 
   Future<List<SrvRecord>> _lookupSrvOverUdp(
     String srvName,
