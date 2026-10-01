@@ -5,6 +5,10 @@
 
 - **iOS: Swift Package Manager support.** The plugin now ships `ios/super_dns_client/Package.swift`, so apps with Swift Package Manager enabled no longer need CocoaPods for it. CocoaPods still works.
 
+### Fixed
+
+- **iOS: apps that link CocoaPods statically (no `use_frameworks!`) failed to build** with undefined `res_9_ninit`/`res_9_nclose`. The podspec now declares `libresolv` so it is linked into the app.
+
 ### Changed
 
 - The iOS plugin class is now Objective-C, because Swift Package Manager can't mix Swift and Objective-C in one target. The `getSystemDns` method channel behaves the same.
