@@ -98,7 +98,7 @@ abstract class BaseUdpSrvClient extends DnsClient {
         answered.classy == asked.classy;
   }
 
-  String _normalizeName(String name) => _stripTrailingDot(name.toLowerCase());
+  String _normalizeName(String name) => name.toLowerCase();
 
   String _stripTrailingDot(String name) =>
       name.endsWith('.') ? name.substring(0, name.length - 1) : name;
