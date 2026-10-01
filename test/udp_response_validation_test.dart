@@ -141,6 +141,21 @@ void main() {
     );
   });
 
+  test('accepts a reply whose question name differs only in case', () async {
+    serve((q, from) {
+      server.send(
+        _srvResponse(q, questionName: _srvName.toUpperCase()),
+        from.address,
+        from.port,
+      );
+    });
+
+    final records =
+        await _LoopbackUdpSrvClient(server.port).lookupSrv(_srvName);
+
+    expect(records.single.target, 'mail.example.com');
+  });
+
   test('ignores replies that do not answer the SRV question', () async {
     List<int> spoofed(
       super_dns.DnsPacket q,
